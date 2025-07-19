@@ -7,10 +7,13 @@ export class Response {
 
     readonly data: unknown;
 
-    constructor(statusCode: number, message: string, data?: unknown) {
+    readonly errors?: any;
+
+    constructor(statusCode: number, message: string, data?: unknown, errors?: any) {
         this.statusCode = statusCode;
         this.message = message;
         this.data = data || null;
+        this.errors = errors || null;
     }
 
     static create(message?: string, data?: unknown) {

@@ -1,53 +1,57 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from './user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UserService {
-    userRecords = [
-        {
-            'id': 1,
-            'name': 'John Doe',
-            'email': 'john@gmail.com',
-            'age': 30
+    constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
+
+    async create(data: Partial<User>): Promise<User> {
+        try {
+            // Check if email already exists
+            const existingUser = await this.userModel.findOne({ email: data.email });
+            if (existingUser) {
+                throw new ConflictException({
+                    message: 'Validation failed',
+                    errors: {
+                        email: ['Email already exists']
+                    }
+                });
+            }
+
+            const user = new this.userModel(data);
+            return user.save();
+        } catch (error) {
+            // Handle MongoDB duplicate key error
+            if (error.code === 11000) {
+                const field = Object.keys(error.keyValue || {})[0];
+                throw new ConflictException({
+                    message: 'Validation failed',
+                    errors: {
+                        [field]: [`${field} already exists`]
+                    }
+                });
+            }
+            throw error;
         }
-    ];
-
-    userList(): object | string {
-        return this.userRecords.length > 0 ? this.userRecords : 'No users found';
     }
 
-    getUser(id: string): object | string {
-        const user = this.userRecords.find(user => user.id === +id);
-        return user ? user : `User with id ${id} not found`;
+    async findAll(): Promise<User[]> {
+        return this.userModel.find().exec();
     }
 
-    createUser(body: CreateUserDto): any {
-        if (body && body.name && body.email && body.age) {
-            const newUser = {
-                id: this.userRecords.length + 1,
-                ...body,
-            };
-            this.userRecords.push(newUser);
-            return newUser
-        }
-        return 'Invalid user data';
+    async findById(id: string): Promise<User | null> {
+        return this.userModel.findById(id).exec();
     }
 
-    updateUser(body: CreateUserDto, id: any): object | string {
-        const userIndex = this.userRecords.findIndex(user => user.id === +id);
-        if (userIndex > -1) {
-            this.userRecords[userIndex] = { ...this.userRecords[userIndex], ...body };
-            return this.userRecords[userIndex];
-        }
-        return `User with id ${id} not found`;
+    async update(id: string, data: Partial<User>): Promise<User | null> {
+        return this.userModel.findByIdAndUpdate(id, data, { new: true }).exec();
     }
 
-    deleteUser(id: string): string {
-        const userIndex = this.userRecords.findIndex(user => user.id === +id);
-        if (userIndex > -1) {
-            this.userRecords.splice(userIndex, 1);
-            return `User with id ${id} deleted successfully`;
-        }
-        return `User with id ${id} not found`;
+    async delete(id: string): Promise<User | null> {
+        return this.userModel.findByIdAndDelete(id).exec();
     }
+
 }

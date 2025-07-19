@@ -2,10 +2,19 @@ export default () => ({
     port: parseInt(process.env.PORT || '3000', 10),
     apiPrefix: process.env.API_PREFIX || 'api/v1',
     nodeEnv: process.env.NODE_ENV || 'development',
+    dbType: process.env.DB_TYPE || 'mongodb',
 
-    database: {
+    mongodb: {
         uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/nest-app',
         name: process.env.MONGODB_DATABASE_NAME || 'nest-app',
+    },
+
+    mysql: {
+        host: process.env.MYSQL_HOST || 'localhost',
+        port: parseInt(process.env.MYSQL_PORT || '3306', 10),
+        username: process.env.MYSQL_USER || 'root',
+        password: process.env.MYSQL_PASSWORD || '',
+        database: process.env.MYSQL_DATABASE || 'nest-app',
     },
 
     jwt: {

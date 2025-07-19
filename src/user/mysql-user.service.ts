@@ -1,19 +1,19 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { User as MysqlUser } from './user.entity';
 import { UserRepository } from './interfaces/user-repository.interface';
 
 /**
  * MysqlUserService implements UserRepository for MySQL using TypeORM.
  */
 @Injectable()
-export class MysqlUserService implements UserRepository {
-    constructor(@InjectRepository(User) private userRepo: Repository<User>) {
-        // console.log('MysqlUserService instantiated');
+export class MysqlUserService implements UserRepository<MysqlUser, number> {
+    constructor(@InjectRepository(MysqlUser) private userRepo: Repository<MysqlUser>) {
+        console.log('🔥 MysqlUserService instantiated - DB_TYPE:', process.env.DB_TYPE);
     }
 
-    async create(data: Partial<User>): Promise<User> {
+    async create(data: Partial<MysqlUser>): Promise<MysqlUser> {
         // Check for duplicate email
         const existingUser = await this.userRepo.findOne({ where: { email: data.email } });
         if (existingUser) {
@@ -26,28 +26,28 @@ export class MysqlUserService implements UserRepository {
         return this.userRepo.save(user);
     }
 
-    async findAll(): Promise<User[]> {
+    async findAll(): Promise<MysqlUser[]> {
         return this.userRepo.find();
     }
 
-    async findById(id: string): Promise<User | null> {
+    async findById(id: number): Promise<MysqlUser | null> {
         return this.userRepo.findOne({ where: { id } });
     }
 
-    async update(id: string, data: Partial<User>): Promise<User | null> {
+    async update(id: number, data: Partial<MysqlUser>): Promise<MysqlUser | null> {
         await this.userRepo.update(id, data);
         return this.findById(id);
     }
 
-    async delete(id: string): Promise<User | null> {
+    async delete(id: number): Promise<MysqlUser | null> {
         const user = await this.findById(id);
-        if (user) {
-            await this.userRepo.delete(id);
-        }
+        if (!user) return null;
+
+        await this.userRepo.remove(user);
         return user;
     }
 
-    async findByEmail(email: string): Promise<User | null> {
+    async findByEmail(email: string): Promise<MysqlUser | null> {
         return this.userRepo.findOne({ where: { email } });
     }
 }

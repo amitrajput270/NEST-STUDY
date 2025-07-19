@@ -1,28 +1,36 @@
-import { Module } from '@nestjs/common';
+import { Module, DynamicModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigService } from '@nestjs/config';
 import { UserController } from './user.controller';
 import { User, UserSchema } from './user.schema';
 import { User as MysqlUser } from './user.entity';
 import { MongoUserService } from './user.service';
 import { MysqlUserService } from './mysql-user.service';
-import { UserRepository } from './interfaces/user-repository.interface';
 
-@Module({
-    imports: [
-        // Register both MongoDB and MySQL models/entities
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-        TypeOrmModule.forFeature([MysqlUser]),
-    ],
-    controllers: [UserController],
-    providers: [
-        MongoUserService,
-        MysqlUserService,
-        {
-            provide: 'UserRepository',
-            useClass: process.env.DB_TYPE === 'mysql' ? MysqlUserService : MongoUserService,
-        },
-    ],
-    exports: ['UserRepository'],
-})
-export class UserModule { }
+// Load environment variables at module load time
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+const dbType = process.env.DB_TYPE || 'mongodb';
+
+@Module({})
+export class UserModule {
+    static forRoot(): DynamicModule {
+        const isMongoDb = dbType === 'mongodb';
+        const isMysql = dbType === 'mysql';
+        return {
+            module: UserModule,
+            imports: [
+                ...(isMongoDb ? [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])] : []),
+                ...(isMysql ? [TypeOrmModule.forFeature([MysqlUser])] : []),
+            ],
+            controllers: [UserController],
+            providers: [
+                ...(isMongoDb ? [MongoUserService] : []),
+                ...(isMysql ? [MysqlUserService] : []),
+            ],
+            exports: [],
+        };
+    }
+}

@@ -6,9 +6,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UserRepository } from './interfaces/user-repository.interface';
 
 @Injectable()
-export class MongoUserService implements UserRepository {
+export class MongoUserService implements UserRepository<User, string> {
     constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {
-        // console.log('MongoUserService instantiated');
+        console.log('🔥 MongoUserService instantiated - DB_TYPE:', process.env.DB_TYPE);
     }
 
     async create(data: Partial<User>): Promise<User> {

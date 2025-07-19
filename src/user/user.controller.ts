@@ -3,10 +3,20 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ValidObjectId } from '../utils/valid-object-id.decorator';
 import { UserRepository } from './interfaces/user-repository.interface';
+import { MongoUserService } from './user.service';
+import { MysqlUserService } from './mysql-user.service';
+
+// Get DB type at module load time
+import * as dotenv from 'dotenv';
+dotenv.config();
+const dbType = process.env.DB_TYPE || 'mongodb';
 
 @Controller('user')
 export class UserController {
-    constructor(@Inject('UserRepository') private readonly userRepo: UserRepository) { }
+    constructor(
+        @Inject(dbType === 'mysql' ? MysqlUserService : MongoUserService)
+        private readonly userRepo: UserRepository<any, string | number>
+    ) { }
 
     @Post()
     async create(@Body() data: CreateUserDto) {
@@ -27,8 +37,8 @@ export class UserController {
     }
 
     @Get(':id')
-    async findById(@ValidObjectId() id: string) {
-        const user = await this.userRepo.findById(id);
+    async findById(@ValidObjectId() id: string | number) {
+        const user = await this.userRepo.findById(id as any);
         if (!user) {
             throw new NotFoundException('User not found');
         }
@@ -39,8 +49,8 @@ export class UserController {
     }
 
     @Put(':id')
-    async update(@ValidObjectId() id: string, @Body() data: UpdateUserDto) {
-        const user = await this.userRepo.update(id, data);
+    async update(@ValidObjectId() id: string | number, @Body() data: UpdateUserDto) {
+        const user = await this.userRepo.update(id as any, data);
         if (!user) {
             throw new NotFoundException('User not found');
         }
@@ -51,8 +61,8 @@ export class UserController {
     }
 
     @Delete(':id')
-    async delete(@ValidObjectId() id: string) {
-        const user = await this.userRepo.delete(id);
+    async delete(@ValidObjectId() id: string | number) {
+        const user = await this.userRepo.delete(id as any);
         if (!user) {
             throw new NotFoundException('User not found');
         }

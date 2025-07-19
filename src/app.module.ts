@@ -11,6 +11,11 @@ import configuration from './config/configuration';
 import { validate } from './config/env.validation';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+const dbType = process.env.DB_TYPE || 'mongodb';
 
 @Module({
   imports: [
@@ -21,26 +26,35 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
       cache: true,
       validate,
     }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.MYSQL_HOST || 'localhost',
-      port: parseInt(process.env.MYSQL_PORT || '3306', 10),
-      username: process.env.MYSQL_USER || 'root',
-      password: process.env.MYSQL_PASSWORD || '',
-      database: process.env.MYSQL_DATABASE || 'nest_app',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // set to false in production!
-    }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('database.uri'),
-        dbName: configService.get<string>('database.name'),
-      }),
-      inject: [ConfigService],
-    }),
+    ...(dbType === 'mongodb' ? [
+      MongooseModule.forRootAsync({
+        imports: [ConfigModule],
+        useFactory: async (configService: ConfigService) => ({
+          uri: configService.get<string>('mongodb.uri'),
+          dbName: configService.get<string>('mongodb.name'),
+        }),
+        inject: [ConfigService],
+      })
+    ] : []),
+    ...(dbType === 'mysql' ? [
+      TypeOrmModule.forRootAsync({
+        imports: [ConfigModule],
+        useFactory: async (configService: ConfigService) => ({
+          type: 'mysql',
+          host: configService.get('mysql.host'),
+          port: configService.get('mysql.port'),
+          username: configService.get('mysql.username'),
+          password: configService.get('mysql.password'),
+          database: configService.get('mysql.database'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: true, // set to false in production!
+          logging: false, // Enable logging to debug connection issues
+        }),
+        inject: [ConfigService],
+      })
+    ] : []),
     CatsModule,
-    UserModule,
+    UserModule.forRoot(),
   ],
   controllers: [AppController, CatsController],
   providers: [AppService, CatsService],

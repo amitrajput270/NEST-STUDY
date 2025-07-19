@@ -3,10 +3,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserRepository } from './interfaces/user-repository.interface';
 
 @Injectable()
-export class UserService {
-    constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
+export class MongoUserService implements UserRepository {
+    constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {
+        // console.log('MongoUserService instantiated');
+    }
 
     async create(data: Partial<User>): Promise<User> {
         try {
@@ -14,7 +17,7 @@ export class UserService {
             const existingUser = await this.userModel.findOne({ email: data.email });
             if (existingUser) {
                 throw new ConflictException({
-                    message: 'Validation failed',
+                    message: '',
                     errors: {
                         email: ['Email already exists']
                     }
@@ -28,7 +31,7 @@ export class UserService {
             if (error.code === 11000) {
                 const field = Object.keys(error.keyValue || {})[0];
                 throw new ConflictException({
-                    message: 'Validation failed',
+                    message: '',
                     errors: {
                         [field]: [`${field} already exists`]
                     }
@@ -54,4 +57,7 @@ export class UserService {
         return this.userModel.findByIdAndDelete(id).exec();
     }
 
+    async findByEmail(email: string): Promise<User | null> {
+        return this.userModel.findOne({ email }).exec();
+    }
 }

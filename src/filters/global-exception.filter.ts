@@ -1,148 +1,103 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response as ExpressResponse } from 'express';
 import { Response } from '../utils/response';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+    private readonly statusMessageMap: Record<number, string> = {
+        400: 'Bad Request',
+        401: 'Unauthorized',
+        403: 'Forbidden',
+        404: 'Not Found',
+        409: 'Conflict',
+        422: 'Unprocessable Entity',
+        500: 'Internal server error',
+    };
+
     catch(exception: any, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<ExpressResponse>();
         const request = ctx.getRequest();
 
         let status = HttpStatus.INTERNAL_SERVER_ERROR;
-        let message = 'Internal server error';
-        let errors: Record<string, string[]> | null = null;
+        let message: string | string[] = 'Internal server error';
+        let errors: any = null;
+        let trace: { file: string; line: string; column: string } | null = null;
 
-        // Handle HTTP exceptions (like BadRequestException, NotFoundException, etc.)
         if (exception instanceof HttpException) {
             status = exception.getStatus();
             const exceptionResponse = exception.getResponse();
-
             if (typeof exceptionResponse === 'object') {
                 message = (exceptionResponse as any).message || exception.message;
+                // if message is blank, use statusMessageMap
+                if ((message === null || message === '') && status in this.statusMessageMap && !errors) {
+                    message = this.statusMessageMap[status];
+                }
 
-                // Handle our custom validation errors format
                 if ((exceptionResponse as any).errors && typeof (exceptionResponse as any).errors === 'object') {
                     errors = (exceptionResponse as any).errors;
-                    message = (exceptionResponse as any).message || 'Validation failed';
                 }
-                // Handle standard validation errors
-                else if (Array.isArray((exceptionResponse as any).message)) {
-                    errors = this.transformValidationErrors((exceptionResponse as any).message);
-                    message = 'Validation failed';
+                // If message is an array, treat as validation errors
+                if (Array.isArray(message)) {
+                    errors = this.groupValidationErrors(message);
+                    message = status in this.statusMessageMap ? this.statusMessageMap[status] : 'Validation failed';
+                }
+                // Use statusMessageMap for error detail if message is a string and no errors
+                if (typeof message === 'string' && status in this.statusMessageMap && !errors) {
+                    errors = message;
+                    message = this.statusMessageMap[status];
                 }
             } else {
                 message = exceptionResponse as string;
+                if (status in this.statusMessageMap) {
+                    errors = message;
+                    message = this.statusMessageMap[status];
+                }
             }
-        }
-        // Handle Mongoose/MongoDB errors
-        else if (exception.name === 'CastError') {
-            status = HttpStatus.BAD_REQUEST;
-            message = 'Invalid ID format';
-        }
-        else if (exception.code === 11000) {
-            status = HttpStatus.CONFLICT;
-            message = 'Validation failed';
-            // Extract field name from MongoDB error and format properly
-            const field = Object.keys(exception.keyValue || {})[0];
-            if (field) {
-                errors = {
-                    [field]: [`${field} already exists`]
-                };
-            }
-        }
-        // Handle other errors
-        else {
+        } else {
             message = exception.message || 'Internal server error';
         }
 
-        const responseData = new Response(status, message, null, errors);
-
+        // Add file name and line number from stack trace if available
+        if (exception.stack) {
+            const stackLines = exception.stack.split('\n');
+            if (stackLines.length > 1) {
+                const match = stackLines[1].match(/\(([^:]+):(\d+):(\d+)\)/);
+                if (match) {
+                    trace = {
+                        file: match[1],
+                        line: match[2],
+                        column: match[3],
+                    };
+                }
+            }
+        }
+        // Always include trace key, even if null
+        const responseData = {
+            statusCode: status,
+            message,
+            data: null,
+            errors,
+            trace,
+        };
         response.status(status).json(responseData);
     }
 
-    private transformValidationErrors(validationErrors: any[]): Record<string, string[]> {
+    // Helper to group validation errors by field/key
+    private groupValidationErrors(messages: string[]): Record<string, string[]> {
         const errorMap: Record<string, string[]> = {};
-
-        validationErrors.forEach(error => {
-            if (error && typeof error === 'object' && error.property) {
-                // Handle class-validator error objects (preferred method)
-                const fieldName = error.property; // Use actual property name from DTO
-                if (!errorMap[fieldName]) {
-                    errorMap[fieldName] = [];
-                }
-
-                if (error.constraints) {
-                    Object.values(error.constraints).forEach((constraint: any) => {
-                        if (typeof constraint === 'string') {
-                            errorMap[fieldName].push(constraint);
-                        }
-                    });
-                } else if (error.message) {
-                    errorMap[fieldName].push(error.message);
-                }
-
-                // Handle nested validation errors
-                if (error.children && Array.isArray(error.children)) {
-                    error.children.forEach((child: any) => {
-                        this.processNestedError(child, errorMap, fieldName);
-                    });
-                }
-            } else if (typeof error === 'string') {
-                // Fallback: Try to extract field name from string errors
-                this.parseStringError(error, errorMap);
-            }
-        });
-
-        return errorMap;
-    }
-
-    private processNestedError(error: any, errorMap: Record<string, string[]>, parentProperty = '') {
-        const propertyName = parentProperty ? `${parentProperty}.${error.property}` : error.property;
-
-        if (error.constraints) {
-            if (!errorMap[propertyName]) {
-                errorMap[propertyName] = [];
-            }
-
-            Object.values(error.constraints).forEach((constraint: any) => {
-                if (typeof constraint === 'string') {
-                    errorMap[propertyName].push(constraint);
-                }
-            });
-        }
-
-        if (error.children && Array.isArray(error.children)) {
-            error.children.forEach((child: any) => {
-                this.processNestedError(child, errorMap, propertyName);
-            });
-        }
-    }
-
-    private parseStringError(error: string, errorMap: Record<string, string[]>) {
-        // For string errors, we can't reliably extract the property name
-        // So we'll use a generic key or try to match common patterns
-        let fieldName = 'general';
-
-        // Try to extract lowercase property names from common validation patterns
-        const patterns = [
-            /^(\w+)\s+(must|should|is|cannot)/i,
-            /(\w+)\s+is\s+required/i,
-            /(\w+)\s+must\s+be/i,
-        ];
-
-        for (const pattern of patterns) {
-            const match = error.match(pattern);
+        for (const msg of messages) {
+            // Try to extract field name from message
+            const match = msg.match(/^\w+\s/);
             if (match) {
-                // Convert to lowercase to match DTO property names
-                fieldName = match[1].toLowerCase();
-                break;
+                const key = match[0].trim().toLowerCase();
+                if (!errorMap[key]) errorMap[key] = [];
+                errorMap[key].push(msg);
+            } else {
+                if (!errorMap.general) errorMap.general = [];
+                errorMap.general.push(msg);
             }
         }
-
-        if (!errorMap[fieldName]) {
-            errorMap[fieldName] = [];
-        }
-        errorMap[fieldName].push(error);
+        return errorMap;
     }
 }

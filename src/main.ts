@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
-import { CustomValidationPipe } from './utils/custom-validation.pipe';
+import { CustomValidationPipe } from './utils/validations/custom-validation.pipe';
 import { FileLogger } from './utils/logger/file-logger';
 import * as express from 'express';
 

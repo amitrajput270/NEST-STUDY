@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Put, Delete, NotFoundException, HttpStatus, Inject, Query } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ValidObjectId } from '../utils/valid-object-id.decorator';
+import { ValidObjectId } from '../utils/validations/valid-object-id.decorator';
 import { UserRepository } from './interfaces/user-repository.interface';
 import { MongoUserService } from './user.service';
 import { MysqlUserService } from './mysql-user.service';

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Put, Delete, NotFoundException, HttpStatus, Inject, Param, Query } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { ValidObjectId } from '../utils/valid-object-id.decorator';
+import { ValidObjectId } from '../utils/validations/valid-object-id.decorator';
 import { PostRepository } from './interfaces/post-repository.interface';
 import { MongoPostService } from './post.service';
 import { MysqlPostService } from './mysql-post.service';

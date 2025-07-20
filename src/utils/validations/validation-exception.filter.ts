@@ -1,6 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost, BadRequestException } from '@nestjs/common';
 import { Response as ExpressResponse } from 'express';
-import { Response } from './response';
+import { Response } from '../response';
 
 @Catch(BadRequestException)
 export class ValidationExceptionFilter implements ExceptionFilter {

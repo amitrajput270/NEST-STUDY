@@ -7,6 +7,9 @@ import { CustomValidationPipe } from './utils/validations/custom-validation.pipe
 import { FileLogger } from './utils/logger/file-logger';
 import * as express from 'express';
 
+// Set timezone to Asia/Kolkata
+process.env.TZ = 'Asia/Kolkata';
+
 async function bootstrap() {
   const fileLogger = FileLogger.getInstance();
   const app = await NestFactory.create(AppModule);
@@ -83,6 +86,8 @@ async function bootstrap() {
   fileLogger.logInfo('Application started', {
     port,
     apiPrefix,
+    timezone: process.env.TZ || 'System default',
+    currentTime: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
     environment: process.env.NODE_ENV || 'development',
     dbType: process.env.DB_TYPE || 'mongodb',
     ipAddress: expressApp.get('trust proxy') ? expressApp.get('x-forwarded-for') || 'unknown' : 'localhost'

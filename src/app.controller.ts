@@ -40,6 +40,7 @@ export class AppController {
         today: TimezoneUtils.getTodayRange(),
         thisWeek: TimezoneUtils.getThisWeekRange(),
         currentTime: TimezoneUtils.formatKolkataTime(new Date()),
+        logFormat: TimezoneUtils.formatForLogs(new Date()),
         timezone: 'Asia/Kolkata'
       }
     };

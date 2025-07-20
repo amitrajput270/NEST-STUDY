@@ -2,6 +2,7 @@ import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import { TimezoneUtils } from '../utils/timezone.util';
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
@@ -34,7 +35,7 @@ export class LoggerMiddleware implements NestMiddleware {
 
         // Log Request
         const requestLog = {
-            timestamp: requestTime.toISOString(),
+            timestamp: TimezoneUtils.formatForLogs(requestTime),
             type: 'REQUEST',
             id: requestId,
             method,
@@ -61,7 +62,7 @@ export class LoggerMiddleware implements NestMiddleware {
             const responseTime = new Date();
 
             const responseLog = {
-                timestamp: responseTime.toISOString(),
+                timestamp: TimezoneUtils.formatForLogs(responseTime),
                 type: 'RESPONSE',
                 id: requestId,
                 statusCode: response.statusCode,
@@ -141,10 +142,12 @@ export class LoggerMiddleware implements NestMiddleware {
     }
 
     private getLogPath(date: Date): string {
-        const year = date.getFullYear().toString();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        const dateStr = date.toISOString().split('T')[0];
+        // Convert date to Asia/Kolkata timezone for proper folder structure
+        const kolkataDate = TimezoneUtils.toKolkataTime(date);
+        const year = kolkataDate.getFullYear().toString();
+        const month = (kolkataDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = kolkataDate.getDate().toString().padStart(2, '0');
+        const dateStr = TimezoneUtils.formatForLogs(kolkataDate).split(' ')[0]; // Get YYYY-MM-DD part
 
         return path.join(
             process.cwd(),
@@ -157,10 +160,12 @@ export class LoggerMiddleware implements NestMiddleware {
     }
 
     private ensureLogDirectory(date: Date): void {
-        const year = date.getFullYear().toString();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        const dateStr = date.toISOString().split('T')[0];
+        // Convert date to Asia/Kolkata timezone for proper folder structure
+        const kolkataDate = TimezoneUtils.toKolkataTime(date);
+        const year = kolkataDate.getFullYear().toString();
+        const month = (kolkataDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = kolkataDate.getDate().toString().padStart(2, '0');
+        const dateStr = TimezoneUtils.formatForLogs(kolkataDate).split(' ')[0]; // Get YYYY-MM-DD part
 
         const baseLogDir = path.join(process.cwd(), 'logs');
         const yearDir = path.join(baseLogDir, year);
@@ -206,7 +211,7 @@ export class LoggerMiddleware implements NestMiddleware {
     private writeInitialLog(): void {
         const initialLog = {
             appName: process.env.npm_package_name || 'NestApp',
-            timestamp: new Date().toISOString(),
+            timestamp: TimezoneUtils.formatForLogs(),
             type: 'SYSTEM',
             message: 'Log file initialized',
             environment: process.env.NODE_ENV || 'development',

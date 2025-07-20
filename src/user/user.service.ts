@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../entitesAndSchema/user.schema';
 import { UserRepository } from './interfaces/user-repository.interface';
+import { PaginationOptions, PaginationResult, PaginationHelper } from '../utils/pagination';
 
 @Injectable()
 export class MongoUserService implements UserRepository<User, string> {
@@ -42,6 +43,43 @@ export class MongoUserService implements UserRepository<User, string> {
 
     async findAll(): Promise<User[]> {
         return this.userModel.find().exec();
+    }
+
+    async findAllPaginated(options: PaginationOptions, search?: string): Promise<PaginationResult<User>> {
+        // Build search query
+        let query = {};
+        if (search) {
+            query = {
+                $or: [
+                    { name: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } }
+                ]
+            };
+        }
+
+        // Build sort object
+        let sort = {};
+        if (options.sort) {
+            sort[options.sort] = options.order === 'ASC' ? 1 : -1;
+        } else {
+            sort = { _id: options.order === 'ASC' ? 1 : -1 };
+        }
+
+        // Use pagination helper for Mongoose
+        const { data, total } = await PaginationHelper.paginateMongoose<User>(
+            this.userModel,
+            query,
+            options.page,
+            options.limit,
+            sort
+        );
+
+        return {
+            data,
+            total,
+            page: options.page,
+            limit: options.limit,
+        };
     }
 
     async findById(id: string): Promise<User | null> {

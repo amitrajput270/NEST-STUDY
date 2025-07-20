@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post as MysqlPost } from './post.entity';
 import { PostRepository } from './interfaces/post-repository.interface';
+import { PaginationOptions, PaginationResult, PaginationHelper } from '../utils/pagination';
 
 /**
  * MysqlPostService implements PostRepository for MySQL using TypeORM.
@@ -27,6 +28,40 @@ export class MysqlPostService implements PostRepository<MysqlPost, number> {
 
     async findAll(): Promise<MysqlPost[]> {
         return this.postRepo.find();
+    }
+
+    async findAllPaginated(options: PaginationOptions, search?: string): Promise<PaginationResult<MysqlPost>> {
+        const queryBuilder = this.postRepo.createQueryBuilder('post');
+
+        // Add search functionality
+        if (search) {
+            queryBuilder.where(
+                'post.title LIKE :search OR post.content LIKE :search',
+                { search: `%${search}%` }
+            );
+        }
+
+        // Add sorting
+        if (options.sort) {
+            const sortField = options.sort.startsWith('post.') ? options.sort : `post.${options.sort}`;
+            queryBuilder.orderBy(sortField, options.order);
+        } else {
+            queryBuilder.orderBy('post.id', options.order);
+        }
+
+        // Use pagination helper for TypeORM
+        const { data, total } = await PaginationHelper.paginateTypeORM<MysqlPost>(
+            queryBuilder,
+            options.page,
+            options.limit
+        );
+
+        return {
+            data,
+            total,
+            page: options.page,
+            limit: options.limit,
+        };
     }
 
     async findById(id: number): Promise<MysqlPost | null> {

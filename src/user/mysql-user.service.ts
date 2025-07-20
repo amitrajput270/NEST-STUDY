@@ -1,8 +1,9 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { User as MysqlUser } from '../entitesAndSchema/user.entity';
 import { UserRepository } from './interfaces/user-repository.interface';
+import { PaginationOptions, PaginationResult, PaginationHelper } from '../utils/pagination';
 
 /**
  * MysqlUserService implements UserRepository for MySQL using TypeORM.
@@ -28,6 +29,40 @@ export class MysqlUserService implements UserRepository<MysqlUser, number> {
 
     async findAll(): Promise<MysqlUser[]> {
         return this.userRepo.find();
+    }
+
+    async findAllPaginated(options: PaginationOptions, search?: string): Promise<PaginationResult<MysqlUser>> {
+        const queryBuilder = this.userRepo.createQueryBuilder('user');
+
+        // Add search functionality
+        if (search) {
+            queryBuilder.where(
+                'user.name LIKE :search OR user.email LIKE :search',
+                { search: `%${search}%` }
+            );
+        }
+
+        // Add sorting
+        if (options.sort) {
+            const sortField = options.sort.startsWith('user.') ? options.sort : `user.${options.sort}`;
+            queryBuilder.orderBy(sortField, options.order);
+        } else {
+            queryBuilder.orderBy('user.id', options.order);
+        }
+
+        // Use pagination helper for TypeORM
+        const { data, total } = await PaginationHelper.paginateTypeORM<MysqlUser>(
+            queryBuilder,
+            options.page,
+            options.limit
+        );
+
+        return {
+            data,
+            total,
+            page: options.page,
+            limit: options.limit,
+        };
     }
 
     async findById(id: number): Promise<MysqlUser | null> {

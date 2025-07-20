@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Post, PostDocument } from '../entites/post.schema';
+import { Post, PostDocument } from '../entitesAndSchema/post.schema';
 import { Model } from 'mongoose';
 import { PostRepository } from './interfaces/post-repository.interface';
 

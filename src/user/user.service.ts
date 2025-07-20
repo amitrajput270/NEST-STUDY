@@ -1,7 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument } from '../entites/user.schema';
+import { User, UserDocument } from '../entitesAndSchema/user.schema';
 import { UserRepository } from './interfaces/user-repository.interface';
 
 @Injectable()

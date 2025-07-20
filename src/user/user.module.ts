@@ -2,8 +2,8 @@ import { Module, DynamicModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserController } from './user.controller';
-import { User, UserSchema } from '../entites/user.schema';
-import { User as MysqlUser } from '../entites/user.entity';
+import { User, UserSchema } from '../entitesAndSchema/user.schema';
+import { User as MysqlUser } from '../entitesAndSchema/user.entity';
 import { MongoUserService } from './user.service';
 import { MysqlUserService } from './mysql-user.service';
 

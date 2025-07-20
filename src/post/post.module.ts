@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { PostController } from './post.controller';
-import { Post, PostSchema } from '../entites/post.schema';
+import { Post, PostSchema } from '../entitesAndSchema/post.schema';
 import { Post as MysqlPost } from './post.entity';
 import { MongoPostService } from './post.service';
 import { MysqlPostService } from './mysql-post.service';

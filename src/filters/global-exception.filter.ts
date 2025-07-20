@@ -1,9 +1,13 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Response as ExpressResponse } from 'express';
 import { Response } from '../utils/response';
+import { FileLogger } from '../utils/logger/file-logger';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+    private readonly logger = new Logger('GlobalExceptionFilter');
+    private readonly fileLogger = FileLogger.getInstance();
+
     private readonly statusMessageMap: Record<number, string> = {
         400: 'Bad Request',
         401: 'Unauthorized',
@@ -23,6 +27,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         let message: string | string[] = 'Internal server error';
         let errors: any = null;
         let trace: { file: string; line: string; column: string } | null = null;
+
+        // Log the exception details for debugging (both console and file), validation errors included
+        // this.fileLogger.logError(`Exception caught: ${exception.message}`, {
+        //     url: request.url,
+        //     method: request.method,
+        //     body: request.body,
+        //     headers: request.headers,
+        //     stack: exception.stack,
+        //     type: exception.constructor.name,
+        //     status: status
+        // });
 
         if (exception instanceof HttpException) {
             status = exception.getStatus();
@@ -62,15 +77,41 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         if (exception.stack) {
             const stackLines = exception.stack.split('\n');
             if (stackLines.length > 1) {
-                const match = stackLines[1].match(/\(([^:]+):(\d+):(\d+)\)/);
+                // Try different patterns for stack trace parsing
+                let match = stackLines[1].match(/\(([^:]+):(\d+):(\d+)\)/);
+                if (!match) {
+                    // Alternative pattern for different error types
+                    match = stackLines[1].match(/at\s+([^:]+):(\d+):(\d+)/);
+                }
+                if (!match && stackLines.length > 2) {
+                    // Try the second line if first doesn't match
+                    match = stackLines[2].match(/\(([^:]+):(\d+):(\d+)\)/);
+                    if (!match) {
+                        match = stackLines[2].match(/at\s+([^:]+):(\d+):(\d+)/);
+                    }
+                }
                 if (match) {
                     trace = {
                         file: match[1],
                         line: match[2],
                         column: match[3],
                     };
+                } else {
+                    // For JSON parsing errors, provide generic trace info
+                    trace = {
+                        file: 'body-parser',
+                        line: '0',
+                        column: '0'
+                    };
                 }
             }
+        } else if (exception.message && exception.message.includes('JSON')) {
+            // Special handling for JSON parsing errors
+            trace = {
+                file: 'express-body-parser',
+                line: '0',
+                column: '0'
+            };
         }
         // Always include trace key, even if null
         const responseData = {

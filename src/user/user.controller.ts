@@ -6,9 +6,6 @@ import { UserRepository } from './interfaces/user-repository.interface';
 import { MongoUserService } from './user.service';
 import { MysqlUserService } from './mysql-user.service';
 
-// Get DB type at module load time
-import * as dotenv from 'dotenv';
-dotenv.config();
 const dbType = process.env.DB_TYPE || 'mongodb';
 
 @Controller('user')

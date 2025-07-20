@@ -1,7 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User as MysqlUser } from './user.entity';
+import { User as MysqlUser } from '../entites/user.entity';
 import { UserRepository } from './interfaces/user-repository.interface';
 
 /**

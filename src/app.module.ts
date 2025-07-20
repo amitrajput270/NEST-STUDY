@@ -6,15 +6,14 @@ import { AppService } from './app.service';
 import { CatsController } from './cats/cats.controller';
 import { CatsService } from './cats/cats.service';
 import { CatsModule } from './cats/cats.module';
-import { UserModule } from 'user/user.module';
+import { UserModule } from './user/user.module';
 import configuration from './config/configuration';
 import { validate } from './config/env.validation';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
-import * as dotenv from 'dotenv';
+import { PostModule } from './post/post.module';
 
 // Load environment variables
-dotenv.config();
 const dbType = process.env.DB_TYPE || 'mongodb';
 
 @Module({
@@ -55,6 +54,7 @@ const dbType = process.env.DB_TYPE || 'mongodb';
     ] : []),
     CatsModule,
     UserModule.forRoot(),
+    PostModule.forRoot(), // Dynamic module for Post
   ],
   controllers: [AppController, CatsController],
   providers: [AppService, CatsService],

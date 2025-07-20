@@ -152,7 +152,6 @@ export class LoggerMiddleware implements NestMiddleware {
             year,
             month,
             day,
-            dateStr,
             `${dateStr}.json`
         );
     }
@@ -169,7 +168,7 @@ export class LoggerMiddleware implements NestMiddleware {
         const dayDir = path.join(monthDir, day);
         const dateDir = path.join(dayDir, dateStr);
 
-        [baseLogDir, yearDir, monthDir, dayDir, dateDir].forEach(dir => {
+        [baseLogDir, yearDir, monthDir, dayDir].forEach(dir => {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }

@@ -1,14 +1,13 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument } from './user.schema';
-import { CreateUserDto } from './dto/create-user.dto';
+import { User, UserDocument } from '../entites/user.schema';
 import { UserRepository } from './interfaces/user-repository.interface';
 
 @Injectable()
 export class MongoUserService implements UserRepository<User, string> {
     constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {
-        console.log('🔥 MongoUserService instantiated - DB_TYPE:', process.env.DB_TYPE);
+        console.log('MongoUserService instantiated - DB_TYPE:', process.env.DB_TYPE);
     }
 
     async create(data: Partial<User>): Promise<User> {

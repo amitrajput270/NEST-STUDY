@@ -52,7 +52,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
                 if ((exceptionResponse as any).errors && typeof (exceptionResponse as any).errors === 'object') {
                     errors = (exceptionResponse as any).errors;
                 }
-                // If message is an array, treat as validation errors
                 if (Array.isArray(message)) {
                     errors = this.groupValidationErrors(message);
                     message = status in this.statusMessageMap ? this.statusMessageMap[status] : 'Validation failed';
@@ -70,7 +69,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
                 }
             }
         } else {
-            message = exception.message || 'Internal server error';
+            // For non-HttpException errors, always set message to 'Internal server error' and errors to exception.message
+            if (status in this.statusMessageMap) {
+                message = this.statusMessageMap[status];
+                errors = exception.message || null;
+            }
         }
 
         // Add file name and line number from stack trace if available

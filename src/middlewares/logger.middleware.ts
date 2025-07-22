@@ -10,6 +10,7 @@ export class LoggerMiddleware implements NestMiddleware {
     private logFile: string;
     private logData: any[] = [];
     private lastChecked: number = 0;
+    private sensitiveFields = ['password', 'token', 'secret', 'authorization', 'access_token', 'refresh_token'];
 
     constructor() {
         const now = new Date();
@@ -41,7 +42,7 @@ export class LoggerMiddleware implements NestMiddleware {
             method,
             url: originalUrl,
             body: this.sanitizeBody(body),
-            headers: request.headers,
+            headers: this.sanitizeHeaders(headers),
         };
 
         this.writeLog(requestLog);
@@ -67,7 +68,7 @@ export class LoggerMiddleware implements NestMiddleware {
                 id: requestId,
                 statusCode: response.statusCode,
                 duration: `${responseTime.getTime() - requestTime.getTime()}ms`,
-                body: responseBody
+                body: this.sanitizeBody(responseBody.data || responseBody),
             };
 
             this.writeLog(responseLog);
@@ -76,12 +77,26 @@ export class LoggerMiddleware implements NestMiddleware {
         next();
     }
 
+
+    // sanitizes sensitive fields in the request headers
+    private sanitizeHeaders(headers: any): any {
+        if (!headers) return null;
+        const sanitized = { ...headers };
+        // Remove sensitive data
+        for (const field of this.sensitiveFields) {
+            if (field in sanitized) {
+                sanitized[field] = '******';
+            }
+        }
+        return sanitized;
+    }
+
+
     private sanitizeBody(body: any): any {
         if (!body) return null;
         const sanitized = { ...body };
         // Remove sensitive data
-        const sensitiveFields = ['password', 'token', 'secret', 'authorization'];
-        for (const field of sensitiveFields) {
+        for (const field of this.sensitiveFields) {
             if (field in sanitized) {
                 sanitized[field] = '******';
             }

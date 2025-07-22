@@ -97,4 +97,15 @@ export class MongoUserService implements UserRepository<User, string> {
     async findByEmail(email: string): Promise<User | null> {
         return this.userModel.findOne({ email }).exec();
     }
+
+    async findAllWithPosts(): Promise<User[]> {
+        return this.userModel
+            .find()
+            .populate({
+                path: 'posts',
+                model: 'Post',
+                select: 'title content isActive createdAt'
+            })
+            .exec();
+    }
 }

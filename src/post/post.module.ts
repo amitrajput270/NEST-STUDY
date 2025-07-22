@@ -4,7 +4,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { PostController } from './post.controller';
 import { Post, PostSchema } from '../entitesAndSchema/post.schema';
-import { Post as MysqlPost } from './post.entity';
+import { User, UserSchema } from '../entitesAndSchema/user.schema';
+import { Post as MysqlPost } from '../entitesAndSchema/post.entity';
+import { User as MysqlUser } from '../entitesAndSchema/user.entity';
 import { MongoPostService } from './post.service';
 import { MysqlPostService } from './mysql-post.service';
 
@@ -22,8 +24,11 @@ export class PostModule {
         return {
             module: PostModule,
             imports: [
-                ...(isMongoDb ? [MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }])] : []),
-                ...(isMysql ? [TypeOrmModule.forFeature([MysqlPost])] : []),
+                ...(isMongoDb ? [MongooseModule.forFeature([
+                    { name: Post.name, schema: PostSchema },
+                    { name: User.name, schema: UserSchema }
+                ])] : []),
+                ...(isMysql ? [TypeOrmModule.forFeature([MysqlPost, MysqlUser])] : []),
             ],
             controllers: [PostController],
             providers: [

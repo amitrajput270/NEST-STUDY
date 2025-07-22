@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
+import { User } from './user.schema';
 
 export type PostDocument = Post & Document;
 
@@ -22,6 +23,17 @@ export class Post {
 
     @Prop({ default: Date.now, select: false })
     updatedAt: Date;
+
+    // Virtual populate for user
+    user?: User;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);
+
+// Add virtual populate for user
+PostSchema.virtual('user', {
+    ref: 'User',
+    localField: 'userId',
+    foreignField: 'id',
+    justOne: true
+});

@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from './user.entity';
 @Entity('posts')
 export class Post {
     @PrimaryGeneratedColumn('identity')
@@ -21,5 +22,9 @@ export class Post {
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
+
+    @ManyToOne(() => User, user => user.posts)
+    @JoinColumn({ name: 'userId' })
+    user: User;
 }
 

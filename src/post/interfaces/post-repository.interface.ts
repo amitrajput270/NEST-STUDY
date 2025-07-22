@@ -9,4 +9,5 @@ export interface PostRepository<T = any, ID = string> {
     update(id: ID, data: Partial<T>): Promise<T | null>;
     delete(id: ID): Promise<T | null>;
     findActive(): Promise<T[]>;
+    findAllWithUsers(): Promise<T[]>;
 }

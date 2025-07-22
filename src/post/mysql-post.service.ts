@@ -1,7 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Post as MysqlPost } from './post.entity';
+import { Post as MysqlPost } from '../entitesAndSchema/post.entity';
 import { PostRepository } from './interfaces/post-repository.interface';
 import { PaginationOptions, PaginationResult, PaginationHelper } from '../utils/pagination';
 
@@ -11,7 +11,7 @@ import { PaginationOptions, PaginationResult, PaginationHelper } from '../utils/
 @Injectable()
 export class MysqlPostService implements PostRepository<MysqlPost, number> {
     constructor(@InjectRepository(MysqlPost) private postRepo: Repository<MysqlPost>) {
-        console.log('🔥 MysqlPostService instantiated - DB_TYPE:', process.env.DB_TYPE);
+        console.log('MysqlPostService instantiated - DB_TYPE:', process.env.DB_TYPE);
     }
 
     async create(data: Partial<MysqlPost>): Promise<MysqlPost> {
@@ -87,5 +87,11 @@ export class MysqlPostService implements PostRepository<MysqlPost, number> {
 
     async findActive(): Promise<MysqlPost[]> {
         return this.postRepo.find({ where: { isActive: true } });
+    }
+
+    async findAllWithUsers(): Promise<MysqlPost[]> {
+        return this.postRepo.find({
+            relations: ['user']
+        });
     }
 }

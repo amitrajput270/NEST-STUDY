@@ -77,6 +77,25 @@ export class UserController {
         };
     }
 
+    @Get('get-users-with-posts')
+    async getUsersWithPosts() {
+        const users = await this.userRepo.findAllWithPosts();
+        if (!users || users.length === 0) {
+            throw new NotFoundException('No users found');
+        }
+
+        return {
+            message: 'Users with posts retrieved successfully',
+            data: users.map(user => ({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                age: user.age,
+                posts: user.posts || []
+            }))
+        };
+    }
+
     @Get(':id')
     async findById(@ValidObjectId() id: string | number) {
         const user = await this.userRepo.findById(id as any);

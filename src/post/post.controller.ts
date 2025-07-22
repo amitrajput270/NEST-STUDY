@@ -89,6 +89,25 @@ export class PostController {
         };
     }
 
+    @Get('get-posts-with-users')
+    async getPostsWithUsers() {
+        const posts = await this.postRepo.findAllWithUsers();
+        if (!posts || posts.length === 0) {
+            throw new NotFoundException('No posts found');
+        }
+
+        return {
+            message: 'Posts with users retrieved successfully',
+            data: posts.map(post => ({
+                id: post.id,
+                title: post.title,
+                content: post.content,
+                userId: post.userId,
+                user: post.user
+            }))
+        };
+    }
+
     @Get('user/:userId')
     async findByUserId(@Param('userId') userId: string) {
         const posts = await this.postRepo.findByUserId(parseInt(userId, 10));

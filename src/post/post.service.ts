@@ -85,4 +85,15 @@ export class MongoPostService implements PostRepository<Post, string> {
     async findActive(): Promise<Post[]> {
         return this.postModel.find({ isActive: true }).exec();
     }
+
+    async findAllWithUsers(): Promise<Post[]> {
+        return this.postModel
+            .find()
+            .populate({
+                path: 'user',
+                model: 'User',
+                select: 'name email'
+            })
+            .exec();
+    }
 }

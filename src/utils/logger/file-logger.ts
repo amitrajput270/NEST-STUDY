@@ -27,8 +27,13 @@ export class FileLogger {
 
     private getLogFileName(type: 'error' | 'access' | 'general' = 'general'): string {
         // Get date in Asia/Kolkata timezone and format as YYYY-MM-DD
-        const kolkataDate = TimezoneUtils.formatForLogs().split(' ')[0]; // Get just the date part
-        return path.join(this.logDirectory, `${type}-${kolkataDate}.log`);
+        const kolkataDate = TimezoneUtils.formatForLogs().split(' ')[0]; // YYYY-MM-DD
+        const [year, month, day] = kolkataDate.split('-');
+        const logSubDir = path.join(this.logDirectory, year, month, day);
+        if (!fs.existsSync(logSubDir)) {
+            fs.mkdirSync(logSubDir, { recursive: true });
+        }
+        return path.join(logSubDir, `${type}-${kolkataDate}.log`);
     }
 
     private writeToFile(fileName: string, data: any): void {

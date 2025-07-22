@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Delete, NotFoundException, HttpStatus, Inject, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Delete, NotFoundException, HttpStatus, Inject, Query, UseGuards } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ValidObjectId } from '../utils/validations/valid-object-id.decorator';
@@ -6,10 +6,13 @@ import { UserRepository } from './interfaces/user-repository.interface';
 import { MongoUserService } from './user.service';
 import { MysqlUserService } from './mysql-user.service';
 import { PaginationDto, PaginationHelper } from '../utils/pagination';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 const dbType = process.env.DB_TYPE || 'mongodb';
 
 @Controller('user')
+@UseGuards(JwtAuthGuard)
 export class UserController {
     constructor(
         @Inject(dbType === 'mysql' ? MysqlUserService : MongoUserService)
@@ -78,7 +81,7 @@ export class UserController {
     }
 
     @Get('get-users-with-posts')
-    async getUsersWithPosts() {
+    async getUsersWithPosts(@CurrentUser() user: any) {
         const users = await this.userRepo.findAllWithPosts();
         if (!users || users.length === 0) {
             throw new NotFoundException('No users found');
@@ -86,12 +89,13 @@ export class UserController {
 
         return {
             message: 'Users with posts retrieved successfully',
-            data: users.map(user => ({
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                age: user.age,
-                posts: user.posts || []
+            requestedBy: user.email,
+            data: users.map(userItem => ({
+                id: userItem.id,
+                name: userItem.name,
+                email: userItem.email,
+                age: userItem.age,
+                posts: userItem.posts || []
             }))
         };
     }

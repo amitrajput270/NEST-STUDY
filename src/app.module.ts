@@ -7,6 +7,7 @@ import { CatsController } from './cats/cats.controller';
 import { CatsService } from './cats/cats.service';
 import { CatsModule } from './cats/cats.module';
 import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 import configuration from './config/configuration';
 import { validate } from './config/env.validation';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -53,6 +54,7 @@ const dbType = process.env.DB_TYPE || 'mongodb';
       })
     ] : []),
     CatsModule,
+    AuthModule.forRoot(),
     UserModule.forRoot(),
     PostModule.forRoot(), // Dynamic module for Post
   ],

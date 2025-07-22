@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Delete, NotFoundException, HttpStatus, Inject, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Delete, NotFoundException, HttpStatus, Inject, Param, Query, UseGuards } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { ValidObjectId } from '../utils/validations/valid-object-id.decorator';
@@ -6,6 +6,8 @@ import { PostRepository } from './interfaces/post-repository.interface';
 import { MongoPostService } from './post.service';
 import { MysqlPostService } from './mysql-post.service';
 import { PaginationDto, PaginationHelper } from '../utils/pagination';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 // Get DB type at module load time
 import * as dotenv from 'dotenv';
@@ -13,6 +15,7 @@ dotenv.config();
 const dbType = process.env.DB_TYPE || 'mongodb';
 
 @Controller('post')
+@UseGuards(JwtAuthGuard)
 export class PostController {
     constructor(
         @Inject(dbType === 'mysql' ? MysqlPostService : MongoPostService)

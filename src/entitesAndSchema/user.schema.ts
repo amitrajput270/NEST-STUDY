@@ -16,6 +16,9 @@ export class User {
     email: string;
 
     @Prop({ required: true })
+    password: string;
+
+    @Prop({ required: true })
     age: number;
 
     // Virtual populate for posts

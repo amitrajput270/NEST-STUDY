@@ -54,7 +54,7 @@ export class UserController {
             );
 
             return {
-                message: 'Users retrieveds successfully',
+                message: 'Users retrieved successfully',
                 data: {
                     meta,
                     records: result.data

@@ -11,7 +11,7 @@ import { PaginationOptions, PaginationResult, PaginationHelper } from '../utils/
 @Injectable()
 export class MysqlPostService implements PostRepository<MysqlPost, number> {
     constructor(@InjectRepository(MysqlPost) private postRepo: Repository<MysqlPost>) {
-        console.log('MysqlPostService instantiated - DB_TYPE:', process.env.DB_TYPE);
+        // console.log('MysqlPostService instantiated - DB_TYPE:', process.env.DB_TYPE);
     }
 
     async create(data: Partial<MysqlPost>): Promise<MysqlPost> {

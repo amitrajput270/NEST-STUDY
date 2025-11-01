@@ -49,8 +49,8 @@ export class FileUploadController {
                 batch,
             );
 
-            // Optionally delete the file after processing
-            // this.fileUploadService.deleteFile(file.path);
+            // Delete the file after successful processing
+            this.fileUploadService.deleteFile(file.path);
 
             return {
                 filename: file.filename,

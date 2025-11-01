@@ -24,7 +24,7 @@ export class FileUploadService {
      */
     async processCsvFile(
         filePath: string,
-        batchSize: number = 1000,
+        batchSize: number = 5000,
     ): Promise<ProcessingResult> {
         return new Promise((resolve, reject) => {
             const result: ProcessingResult = {
@@ -54,10 +54,10 @@ export class FileUploadService {
 
                     // Log first row for debugging
                     if (result.totalRows === 1) {
-                        this.logger.logInfo('First CSV row received', {
-                            row,
-                            columns: Object.keys(row),
-                        });
+                        // this.logger.logInfo('First CSV row received', {
+                        //     row,
+                        //     columns: Object.keys(row),
+                        // });
                     }
 
                     batch.push(row);
@@ -97,10 +97,10 @@ export class FileUploadService {
                         }
                     }
 
-                    this.logger.logInfo('CSV file processing completed', {
-                        filePath,
-                        result,
-                    });
+                    // this.logger.logInfo('CSV file processing completed', {
+                    //     filePath,
+                    //     result,
+                    // });
 
                     resolve(result);
                 })
@@ -116,46 +116,41 @@ export class FileUploadService {
 
     /**
      * Process a batch of CSV rows
-     * This method saves fees data to the database using bulk insert
+     * This method saves fees data to the database using bulk insert with transaction
      * @param batch Array of CSV rows
      */
     private async processBatch(batch: CsvRow[]): Promise<void> {
+        const queryRunner = this.feesDataRepository.manager.connection.createQueryRunner();
+
         try {
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+
             // Transform CSV rows to FeesData entities
-            const feesDataEntries = batch.map((row, index) => {
-                const transformed = this.transformCsvRowToFeesData(row);
+            const feesDataEntries = batch.map(row => this.transformCsvRowToFeesData(row));
 
-                // Log first entry for debugging
-                if (index === 0) {
-                    this.logger.logInfo('First transformed entry in batch', {
-                        original: row,
-                        transformed: transformed,
-                    });
-                }
+            // Bulk insert using raw query for maximum performance
+            if (feesDataEntries.length > 0) {
+                await queryRunner.manager
+                    .createQueryBuilder()
+                    .insert()
+                    .into(FeesData)
+                    .values(feesDataEntries)
+                    .orIgnore() // Skip duplicates instead of failing
+                    .execute();
+            }
 
-                return transformed;
-            });
-
-            // Bulk insert into database
-            // Using createQueryBuilder for better performance with large datasets
-            await this.feesDataRepository
-                .createQueryBuilder()
-                .insert()
-                .into(FeesData)
-                .values(feesDataEntries)
-                .execute();
-
-            this.logger.logInfo('Batch processed successfully', {
-                batchSize: batch.length,
-            });
+            await queryRunner.commitTransaction();
         } catch (error) {
+            await queryRunner.rollbackTransaction();
             this.logger.logError('Error processing batch', {
                 error: error.message,
                 stack: error.stack,
                 batchSize: batch.length,
-                firstRow: batch[0],
             });
             throw error;
+        } finally {
+            await queryRunner.release();
         }
     }
 

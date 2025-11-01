@@ -17,7 +17,7 @@ export class FeesData {
     @Column({ type: 'varchar', length: 50, nullable: true })
     session: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 200, nullable: true })
     alloted_category: string;
 
     @Column({ type: 'varchar', length: 50, nullable: true })
@@ -26,7 +26,7 @@ export class FeesData {
     @Column({ type: 'varchar', length: 50, nullable: true })
     voucher_no: string;
 
-    @Column({ type: 'varchar', length: 50, nullable: true })
+    @Column({ type: 'varchar', length: 100, nullable: true })
     roll_no: string;
 
     @Column({ type: 'varchar', length: 100, nullable: true })
@@ -35,25 +35,25 @@ export class FeesData {
     @Column({ type: 'varchar', length: 50, nullable: true })
     status: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 150, nullable: true })
     fee_category: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 200, nullable: true })
     faculty: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 200, nullable: true })
     program: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 200, nullable: true })
     department: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 200, nullable: true })
     batch: string;
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     receipt_no: string;
 
-    @Column({ type: 'varchar', length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 150, nullable: true })
     fee_head: string;
 
     @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })

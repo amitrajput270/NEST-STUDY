@@ -11,7 +11,7 @@ import { PaginationOptions, PaginationResult, PaginationHelper } from '../utils/
 @Injectable()
 export class MysqlUserService implements UserRepository<MysqlUser, number> {
     constructor(@InjectRepository(MysqlUser) private userRepo: Repository<MysqlUser>) {
-        console.log('MysqlUserService instantiated - DB_TYPE:', process.env.DB_TYPE);
+        // console.log('MysqlUserService instantiated - DB_TYPE:', process.env.DB_TYPE);
     }
 
     async create(data: Partial<MysqlUser>): Promise<MysqlUser> {

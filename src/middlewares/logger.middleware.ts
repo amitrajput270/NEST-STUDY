@@ -231,7 +231,8 @@ export class LoggerMiddleware implements NestMiddleware {
             message: 'Log file initialized',
             environment: process.env.NODE_ENV || 'development',
             nodeVersion: process.version,
-            appVersion: process.env.npm_package_version || '1.0.0'
+            appVersion: process.env.npm_package_version || '1.0.0',
+            dbType: process.env.DB_TYPE || 'mongodb',
         };
         this.logData = [initialLog];
         this.persistLogs();

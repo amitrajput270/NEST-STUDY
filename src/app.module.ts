@@ -50,6 +50,12 @@ const dbType = process.env.DB_TYPE || 'mongodb';
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: true, // set to false in production!
           logging: false, // Enable logging to debug connection issues
+          // Connection pool settings for better performance
+          extra: {
+            connectionLimit: 20, // Increased from default 10
+            waitForConnections: true,
+            queueLimit: 0,
+          },
         }),
         inject: [ConfigService],
       })

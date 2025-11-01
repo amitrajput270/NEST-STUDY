@@ -26,6 +26,15 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## 📚 Documentation
+
+- **[Performance Optimization](PERFORMANCE_OPTIMIZATION.md)** - Speed up CSV uploads (15-60x faster)
+- **[File Cleanup](FILE_CLEANUP.md)** - Automatic file deletion after processing
+- **[Fees Data Upload Guide](FEES_DATA_UPLOAD_GUIDE.md)** - Complete CSV upload guide
+- **[API Testing](API_TESTING.md)** - Test all endpoints
+- **[JWT Authentication](JWT_AUTHENTICATION.md)** - Auth implementation
+- **[BOM Fix](BOM_FIX.md)** - UTF-8 BOM handling
+
 ## Project setup
 
 ```bash
@@ -97,4 +106,5 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
 # NEST-STUDY

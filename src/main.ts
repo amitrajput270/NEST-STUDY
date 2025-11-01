@@ -24,7 +24,7 @@ async function bootstrap() {
     verify: (req: any, res, buf) => {
       req.rawBody = buf;
     },
-    limit: '10mb'
+    limit: '350mb' // Increased to support 300MB CSV files + overhead
   }), (error: any, req: any, res: any, next: any) => {
     if (error instanceof SyntaxError && 'body' in error) {
       // Log to both console and file

@@ -13,6 +13,7 @@ import { validate } from './config/env.validation';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { PostModule } from './post/post.module';
+import { FileUploadModule } from './file-upload/file-upload.module';
 
 // Load environment variables
 const dbType = process.env.DB_TYPE || 'mongodb';
@@ -57,6 +58,7 @@ const dbType = process.env.DB_TYPE || 'mongodb';
     AuthModule.forRoot(),
     UserModule.forRoot(),
     PostModule.forRoot(), // Dynamic module for Post
+    FileUploadModule,
   ],
   controllers: [AppController, CatsController],
   providers: [AppService, CatsService],

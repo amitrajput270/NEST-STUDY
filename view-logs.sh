@@ -69,7 +69,7 @@ format_log() {
             ts=$(echo "$line" | jq -r '.timestamp // empty')
             lvl=$(echo "$line" | jq -r '.level // empty')
             msg=$(echo "$line" | jq -r '.message // empty')
-            
+
             case "$lvl" in
                 "ERROR") echo -e "${RED}[$ts] ❌ $msg${NC}" ;;
                 "WARN") echo -e "${YELLOW}[$ts] ⚠️  $msg${NC}" ;;
@@ -89,7 +89,7 @@ case $choice in
         echo -e "${RED}║                    🚨 Error Logs (Today)                       ║${NC}"
         echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
-        
+
         if [ -f "$CURRENT_LOG_DIR/error-$CURRENT_DATE.log" ] && [ -s "$CURRENT_LOG_DIR/error-$CURRENT_DATE.log" ]; then
             lines=$(wc -l < "$CURRENT_LOG_DIR/error-$CURRENT_DATE.log" | tr -d ' ')
             echo -e "${BLUE}📄 error-$CURRENT_DATE.log${NC} ${YELLOW}($lines lines)${NC}"
@@ -99,14 +99,14 @@ case $choice in
             echo -e "${GREEN}✅ No errors today!${NC}"
         fi
         ;;
-        
+
     2)
         clear
         echo -e "${GREEN}╔════════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${GREEN}║                  ℹ️  General Logs (Today)                      ║${NC}"
         echo -e "${GREEN}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
-        
+
         if [ -f "$CURRENT_LOG_DIR/general-$CURRENT_DATE.log" ] && [ -s "$CURRENT_LOG_DIR/general-$CURRENT_DATE.log" ]; then
             lines=$(wc -l < "$CURRENT_LOG_DIR/general-$CURRENT_DATE.log" | tr -d ' ')
             echo -e "${BLUE}📄 general-$CURRENT_DATE.log${NC} ${YELLOW}($lines lines)${NC}"
@@ -116,14 +116,14 @@ case $choice in
             echo -e "${YELLOW}⚠️  No general logs found${NC}"
         fi
         ;;
-        
+
     3)
         clear
         echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${CYAN}║              👁️  Live Monitoring (Ctrl+C to stop)              ║${NC}"
         echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
-        
+
         if [ -d "$CURRENT_LOG_DIR" ]; then
             # List available files
             log_files=("$CURRENT_LOG_DIR"/*.log "$CURRENT_LOG_DIR"/*.json)
@@ -131,7 +131,7 @@ case $choice in
             for f in "${log_files[@]}"; do
                 [ -f "$f" ] && valid_files+=("$f")
             done
-            
+
             if [ ${#valid_files[@]} -eq 0 ]; then
                 echo -e "${RED}❌ No log files to monitor${NC}"
             else
@@ -142,7 +142,7 @@ case $choice in
                 echo ""
                 echo -e "${YELLOW}Press Ctrl+C to stop...${NC}"
                 echo ""
-                
+
                 # Use tail -f on all files without format_log to avoid buffering
                 tail -f "${valid_files[@]}" 2>/dev/null
             fi
@@ -151,39 +151,39 @@ case $choice in
             echo -e "${YELLOW}Directory: $CURRENT_LOG_DIR${NC}"
         fi
         ;;
-        
+
     4)
         clear
         echo -e "${PURPLE}╔════════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${PURPLE}║                    📅 View Specific Date                       ║${NC}"
         echo -e "${PURPLE}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
-        
+
         read -p "Enter date (YYYY-MM-DD): " log_date
         y=$(echo $log_date | cut -d'-' -f1)
         m=$(echo $log_date | cut -d'-' -f2)
         d=$(echo $log_date | cut -d'-' -f3)
         dir="$LOG_BASE_DIR/$y/$m/$d"
-        
+
         echo ""
         if [ -d "$dir" ]; then
             echo -e "${GREEN}✓ Found logs for $log_date${NC}"
             echo -e "${BLUE}📁 Directory: $dir${NC}"
             echo ""
-            
+
             # List all files first
             files=("$dir"/*.log "$dir"/*.json)
             valid_files=()
             for f in "${files[@]}"; do
                 [ -f "$f" ] && valid_files+=("$f")
             done
-            
+
             if [ ${#valid_files[@]} -eq 0 ]; then
                 echo -e "${YELLOW}No log files found${NC}"
             else
                 echo -e "${YELLOW}Found ${#valid_files[@]} file(s)${NC}"
                 echo ""
-                
+
                 # Show file list with numbers
                 i=1
                 for file in "${valid_files[@]}"; do
@@ -193,7 +193,7 @@ case $choice in
                     echo -e "${GREEN}  $i.${NC} ${CYAN}$name${NC} ${YELLOW}($size, $lines lines)${NC}"
                     ((i++))
                 done
-                
+
                 echo ""
                 echo -e "${YELLOW}Options:${NC}"
                 echo -e "  ${GREEN}1-${#valid_files[@]}${NC} View specific file"
@@ -201,7 +201,7 @@ case $choice in
                 echo -e "  ${GREEN}0${NC} Back to menu"
                 echo ""
                 read -p "Choose: " file_choice
-                
+
                 if [ "$file_choice" == "a" ]; then
                     # Show preview of all files
                     for file in "${valid_files[@]}"; do
@@ -210,7 +210,7 @@ case $choice in
                         echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
                         echo -e "${BLUE}📄 $name${NC}"
                         echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                        
+
                         if [[ "$name" == *.json ]]; then
                             if command -v jq &> /dev/null; then
                                 head -n 10 "$file" | jq -C '.' 2>/dev/null || head -n 10 "$file"
@@ -226,13 +226,13 @@ case $choice in
                     file="${valid_files[$((file_choice-1))]}"
                     name=$(basename "$file")
                     lines=$(wc -l < "$file" | tr -d ' ')
-                    
+
                     clear
                     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
                     echo -e "${BLUE}📄 $name${NC} ${YELLOW}($lines lines)${NC}"
                     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
                     echo ""
-                    
+
                     # For small files (< 100 lines), show directly; for large files, use less
                     if [ "$lines" -lt 100 ]; then
                         if [[ "$name" == *.json ]]; then
@@ -265,29 +265,29 @@ case $choice in
             echo -e "${YELLOW}Expected path: $dir${NC}"
         fi
         ;;
-        
+
     5)
         clear
         echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${BLUE}║                      📊 Statistics                             ║${NC}"
         echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
-        
+
         if [ -d "$CURRENT_LOG_DIR" ]; then
             for file in "$CURRENT_LOG_DIR"/*.log "$CURRENT_LOG_DIR"/*.json; do
                 if [ -f "$file" ]; then
                     name=$(basename "$file")
                     size=$(ls -lh "$file" | awk '{print $5}')
                     lines=$(wc -l < "$file" | tr -d ' ')
-                    
+
                     echo -e "  ${CYAN}📄 $name${NC}"
                     echo -e "     Size: ${YELLOW}$size${NC}, Lines: ${YELLOW}$lines${NC}"
-                    
+
                     if [ -s "$file" ]; then
                         errors=$(grep -c '"level":"ERROR"' "$file" 2>/dev/null || echo "0")
                         warns=$(grep -c '"level":"WARN"' "$file" 2>/dev/null || echo "0")
                         infos=$(grep -c '"level":"INFO"' "$file" 2>/dev/null || echo "0")
-                        
+
                         # For JSON files, count REQUEST/RESPONSE types
                         if [[ "$name" == *.json ]]; then
                             requests=$(grep -c '"type":"REQUEST"' "$file" 2>/dev/null || echo "0")
@@ -296,7 +296,7 @@ case $choice in
                                 echo -e "     ${CYAN}Requests: $requests${NC} | ${GREEN}Responses: $responses${NC}"
                             fi
                         fi
-                        
+
                         if [ "$errors" -gt 0 ] || [ "$warns" -gt 0 ] || [ "$infos" -gt 0 ]; then
                             echo -e "     ${RED}Errors: $errors${NC} | ${YELLOW}Warns: $warns${NC} | ${GREEN}Info: $infos${NC}"
                         fi
@@ -308,32 +308,32 @@ case $choice in
             echo -e "${YELLOW}  No logs for today${NC}"
         fi
         ;;
-        
+
     6)
         clear
         echo -e "${YELLOW}╔════════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${YELLOW}║                      🔍 Search Logs                            ║${NC}"
         echo -e "${YELLOW}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
-        
+
         read -p "Search term: " term
         read -p "Last N days (default 7): " days
         days=${days:-7}
-        
+
         echo ""
         echo -e "${BLUE}Searching '$term' in last $days days...${NC}"
         echo ""
-        
+
         found=0
         find "$LOG_BASE_DIR" -type f \( -name "*.log" -o -name "*.json" \) -mtime -$days | while read file; do
             if grep -qi "$term" "$file" 2>/dev/null; then
                 name=$(basename "$file")
                 path=$(dirname "$file" | sed "s|$LOG_BASE_DIR/||")
-                
+
                 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
                 echo -e "${GREEN}📄 $path/$name${NC}"
                 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                
+
                 if [[ "$name" == *.json ]] && command -v jq &> /dev/null; then
                     grep -i "$term" "$file" | head -10 | jq -C '.' 2>/dev/null || grep -i "$term" "$file" | head -10
                 else
@@ -343,30 +343,30 @@ case $choice in
                 found=1
             fi
         done
-        
+
         [ "$found" -eq 0 ] && echo -e "${YELLOW}No results${NC}"
         ;;
-        
+
     7)
         clear
         echo -e "${PURPLE}╔════════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${PURPLE}║                     📜 Last N Lines                            ║${NC}"
         echo -e "${PURPLE}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
-        
+
         read -p "Number of lines (default 50): " n
         n=${n:-50}
-        
+
         echo ""
         if [ -d "$CURRENT_LOG_DIR" ]; then
             for file in "$CURRENT_LOG_DIR"/*.log "$CURRENT_LOG_DIR"/*.json; do
                 if [ -f "$file" ] && [ -s "$file" ]; then
                     name=$(basename "$file")
-                    
+
                     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
                     echo -e "${BLUE}📄 $name${NC} ${YELLOW}(last $n lines)${NC}"
                     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-                    
+
                     # For JSON files, pretty print if possible
                     if [[ "$name" == *.json ]]; then
                         if command -v jq &> /dev/null; then
@@ -384,13 +384,13 @@ case $choice in
             echo -e "${RED}❌ No logs for today${NC}"
         fi
         ;;
-        
+
     0)
         clear
         echo -e "${GREEN}👋 Goodbye!${NC}"
         exit 0
         ;;
-        
+
     *)
         echo -e "${RED}❌ Invalid choice${NC}"
         ;;

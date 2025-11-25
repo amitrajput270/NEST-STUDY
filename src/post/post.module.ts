@@ -1,7 +1,6 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigService } from '@nestjs/config';
 import { PostController } from './post.controller';
 import { Post, PostSchema } from '../entitesAndSchema/post.schema';
 import { User, UserSchema } from '../entitesAndSchema/user.schema';

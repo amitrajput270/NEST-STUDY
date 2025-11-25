@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 't
 import { User } from './user.entity';
 @Entity('posts')
 export class Post {
-    @PrimaryGeneratedColumn('identity')
+    @PrimaryGeneratedColumn()
     id: number;
 
     @Column({ type: 'int' })

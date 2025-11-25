@@ -90,8 +90,24 @@ export class MysqlPostService implements PostRepository<MysqlPost, number> {
     }
 
     async findAllWithUsers(): Promise<MysqlPost[]> {
-        return this.postRepo.find({
-            relations: ['user']
-        });
+        // return this.postRepo.find({
+        //     relations: ['user']
+        // });
+
+        // return only posts with user data with some selected fields
+        return this.postRepo.createQueryBuilder('post')
+            .leftJoinAndSelect('post.user', 'user')
+            .select([
+                'post.id',
+                'post.title',
+                'post.content',
+                'post.userId',
+                'user.id',
+                'user.name',
+                'user.email'
+            ])
+            .getMany();
+
+
     }
 }

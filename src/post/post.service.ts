@@ -7,7 +7,8 @@ import { PaginationOptions, PaginationResult, PaginationHelper } from '../utils/
 
 @Injectable()
 export class MongoPostService implements PostRepository<Post, string> {
-    constructor(@InjectModel(Post.name) private postModel: Model<PostDocument>) {
+    constructor(@InjectModel(Post.name)
+    private postModel: Model<PostDocument>) {
         console.log('MongoPostService instantiated - DB_TYPE:', process.env.DB_TYPE);
     }
 

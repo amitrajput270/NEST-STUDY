@@ -33,52 +33,28 @@ export class PostController {
 
     @Get()
     async findAll(@Query() paginationDto: PaginationDto, @Query('search') search?: string) {
-        // If pagination parameters OR search OR sort parameters are provided, use paginated method
-        if (paginationDto.page !== undefined && paginationDto.page !== null || search || paginationDto.sort) {
-            // Determine if this is actual pagination (page parameter provided) vs filtering/sorting only
-            const isActuallyPaginated = paginationDto.page !== undefined && paginationDto.page !== null;
+        const result = await this.postRepo.findAllPaginated({
+            page: paginationDto.page || 1,
+            limit: paginationDto.limit || 10,
+            sort: paginationDto.sort,
+            order: paginationDto.order || 'ASC'
+        }, search);
+        const effectivePage = result.page ?? 1;
+        const effectiveLimit = result.limit ?? result.total;
 
-            const result = await this.postRepo.findAllPaginated({
-                page: paginationDto.page || 1,
-                limit: paginationDto.limit || (isActuallyPaginated ? 10 : 1000), // Use 10 for pagination, 1000 for search/sort only
-                sort: paginationDto.sort,
-                order: paginationDto.order || 'ASC'
-            }, search);
 
-            // For non-paginated requests (no page parameter), set appropriate meta values
-            const effectivePage = isActuallyPaginated ? result.page : 1;
-            const effectiveLimit = isActuallyPaginated ? result.limit : result.total;
-
-            const meta = PaginationHelper.generatePaginationMeta(
-                result.total,
-                effectivePage,
-                effectiveLimit,
-                result.data.length
-            );
-
-            return {
-                message: 'Posts retrieved successfully',
-                data: {
-                    meta,
-                    records: result.data
-                }
-            };
-        }
-
-        // Otherwise, return all posts with meta structure (basic case - no params at all)
-        const posts = await this.postRepo.findAll();
         const meta = PaginationHelper.generatePaginationMeta(
-            posts.length,
-            1,
-            posts.length,
-            posts.length
+            result.total,
+            effectivePage,
+            effectiveLimit,
+            result.data.length
         );
 
         return {
             message: 'Posts retrieved successfully',
             data: {
                 meta,
-                records: posts
+                records: result.data
             }
         };
     }
@@ -93,21 +69,37 @@ export class PostController {
     }
 
     @Get('get-posts-with-users')
-    async getPostsWithUsers() {
+    async getPostsWithUsers(@Query() paginationDto: PaginationDto, @Query('search') search?: string) {
         const posts = await this.postRepo.findAllWithUsers();
         if (!posts || posts.length === 0) {
-            throw new NotFoundException('No posts found');
+            return {
+                message: 'Post not found',
+            };
         }
+
+        const result = await this.postRepo.findAllPaginated({
+            page: paginationDto.page || 1,
+            limit: paginationDto.limit || 10,
+            sort: paginationDto.sort,
+            order: paginationDto.order || 'ASC'
+        }, search);
+        const effectivePage = result.page ?? 1;
+        const effectiveLimit = result.limit ?? result.total;
+
+
+        const meta = PaginationHelper.generatePaginationMeta(
+            result.total,
+            effectivePage,
+            effectiveLimit,
+            result.data.length
+        );
 
         return {
             message: 'Posts with users retrieved successfully',
-            data: posts.map(post => ({
-                id: post.id,
-                title: post.title,
-                content: post.content,
-                userId: post.userId,
-                user: post.user
-            }))
+            data: {
+                meta,
+                records: posts
+            }
         };
     }
 
@@ -124,7 +116,9 @@ export class PostController {
     async findById(@ValidObjectId() id: string | number) {
         const post = await this.postRepo.findById(id as any);
         if (!post) {
-            throw new NotFoundException('Post not found');
+            return {
+                message: 'Post not found',
+            };
         }
         return {
             message: 'Post details found',
@@ -136,7 +130,9 @@ export class PostController {
     async update(@ValidObjectId() id: string | number, @Body() data: UpdatePostDto) {
         const post = await this.postRepo.update(id as any, data);
         if (!post) {
-            throw new NotFoundException('Post not found');
+            return {
+                message: 'Post not found',
+            };
         }
         return {
             message: 'Post updated successfully',
@@ -148,7 +144,9 @@ export class PostController {
     async delete(@ValidObjectId() id: string | number) {
         const post = await this.postRepo.delete(id as any);
         if (!post) {
-            throw new NotFoundException('Post not found');
+            return {
+                message: 'Post not found',
+            };
         }
         return {
             message: 'Post deleted successfully',

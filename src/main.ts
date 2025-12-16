@@ -20,7 +20,7 @@ async function bootstrap() {
   expressApp.set('trust proxy', true);
 
   // Custom JSON body parser with error handling
-  app.use('/api/v1', express.json({
+  app.use('/api/v1/*path', express.json({
     verify: (req: any, res, buf) => {
       req.rawBody = buf;
     },

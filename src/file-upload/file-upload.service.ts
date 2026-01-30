@@ -6,6 +6,11 @@ import { parse } from 'csv-parse';
 import { CsvRow, ProcessingResult } from './interfaces/csv-row.interface';
 import { FileLogger } from '../utils/logger/file-logger';
 import { FeesData } from './entities';
+import { exit } from 'process';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+
+dayjs.extend(customParseFormat);
 
 @Injectable()
 export class FileUploadService {
@@ -16,102 +21,83 @@ export class FileUploadService {
         private readonly feesDataRepository: Repository<FeesData>,
     ) { }
 
-    /**
-     * Process a CSV file using streaming to handle large files efficiently
-     * @param filePath Path to the uploaded CSV file
-     * @param batchSize Number of rows to process in each batch
-     * @returns ProcessingResult with statistics
-     */
     async processCsvFile(
         filePath: string,
-        batchSize: number = 5000,
+        batchSize = 2000,
     ): Promise<ProcessingResult> {
-        return new Promise((resolve, reject) => {
-            const result: ProcessingResult = {
-                totalRows: 0,
-                processedRows: 0,
-                failedRows: 0,
-                errors: [],
-            };
 
-            const batch: CsvRow[] = [];
+        const result: ProcessingResult = {
+            totalRows: 0,
+            processedRows: 0,
+            failedRows: 0,
+            errors: [],
+        };
 
-            const parser = parse({
-                columns: true, // Use first row as header
-                skip_empty_lines: true,
-                trim: true,
-                cast: false, // Don't auto-cast, we'll handle it manually
-                cast_date: false,
-                relax_quotes: true,
-                relax_column_count: true,
-                bom: true, // Handle UTF-8 BOM (Byte Order Mark)
-            });
-
-            const stream = createReadStream(filePath, { encoding: 'utf8' })
-                .pipe(parser)
-                .on('data', async (row: CsvRow) => {
-                    result.totalRows++;
-
-                    // Log first row for debugging
-                    if (result.totalRows === 1) {
-                        // this.logger.logInfo('First CSV row received', {
-                        //     row,
-                        //     columns: Object.keys(row),
-                        // });
-                    }
-
-                    batch.push(row);
-
-                    // Process batch when it reaches the batch size
-                    if (batch.length >= batchSize) {
-                        stream.pause(); // Pause stream while processing
-
-                        try {
-                            await this.processBatch([...batch]);
-                            result.processedRows += batch.length;
-                            batch.length = 0; // Clear batch
-                            stream.resume(); // Resume stream
-                        } catch (error) {
-                            result.failedRows += batch.length;
-                            result.errors.push({
-                                row: result.totalRows,
-                                error: error.message,
-                            });
-                            batch.length = 0;
-                            stream.resume();
-                        }
-                    }
-                })
-                .on('end', async () => {
-                    // Process remaining rows in the batch
-                    if (batch.length > 0) {
-                        try {
-                            await this.processBatch(batch);
-                            result.processedRows += batch.length;
-                        } catch (error) {
-                            result.failedRows += batch.length;
-                            result.errors.push({
-                                row: result.totalRows,
-                                error: error.message,
-                            });
-                        }
-                    }
-
-                    // this.logger.logInfo('CSV file processing completed', {
-                    //     filePath,
-                    //     result,
-                    // });
-
-                    resolve(result);
-                })
-                .on('error', (error) => {
-                    this.logger.logError('CSV file processing error', {
-                        error: error.message,
-                        filePath,
-                    });
-                    reject(new BadRequestException(`Failed to process CSV file: ${error.message}`));
-                });
+        const parser = parse({
+            columns: true,
+            skip_empty_lines: true,
+            trim: true,
+            bom: true,
         });
+        const stream = createReadStream(filePath).pipe(parser);
+        const queryRunner =
+            this.feesDataRepository.manager.connection.createQueryRunner();
+
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        let batch: Partial<FeesData>[] = [];
+
+        try {
+            for await (const row of stream) {
+                result.totalRows++;
+                // if (result.totalRows === 1) {
+                //     this.logger.logInfo('First CSV row received', {
+                //         row,
+                //         columns: Object.keys(row),
+                //     });
+                // }
+                batch.push(this.transformCsvRowToFeesData(row));
+                if (batch.length === batchSize) {
+                    await this.bulkInsert(batch, queryRunner);
+                    result.processedRows += batch.length;
+                    batch = [];
+                }
+            }
+
+            // remaining rows
+            if (batch.length) {
+                await this.bulkInsert(batch, queryRunner);
+                result.processedRows += batch.length;
+            }
+
+            await queryRunner.commitTransaction();
+        } catch (err) {
+            await queryRunner.rollbackTransaction();
+            result.failedRows = result.totalRows - result.processedRows;
+            throw err;
+        } finally {
+            await queryRunner.release();
+            this.deleteFileAsync(filePath);
+        }
+
+        return result;
+    }
+
+    private async bulkInsert(
+        rows: Partial<FeesData>[],
+        queryRunner,
+    ) {
+        await queryRunner.manager
+            .createQueryBuilder()
+            .insert()
+            .into(FeesData)
+            .values(rows)
+            .execute(); // remove orIgnore if possible
+    }
+
+    private deleteFileAsync(filePath: string) {
+        import('fs').then(fs => fs.unlink(filePath, () => { }));
     }
 
     /**
@@ -125,10 +111,8 @@ export class FileUploadService {
         try {
             await queryRunner.connect();
             await queryRunner.startTransaction();
-
             // Transform CSV rows to FeesData entities
             const feesDataEntries = batch.map(row => this.transformCsvRowToFeesData(row));
-
             // Bulk insert using raw query for maximum performance
             if (feesDataEntries.length > 0) {
                 await queryRunner.manager
@@ -136,10 +120,9 @@ export class FileUploadService {
                     .insert()
                     .into(FeesData)
                     .values(feesDataEntries)
-                    .orIgnore() // Skip duplicates instead of failing
+                    // .orIgnore() // Skip duplicates instead of failing
                     .execute();
             }
-
             await queryRunner.commitTransaction();
         } catch (error) {
             await queryRunner.rollbackTransaction();
@@ -202,7 +185,7 @@ export class FileUploadService {
         if (value === null || value === undefined || value === '') {
             return undefined;
         }
-        return String(value).trim();
+        return String(value ?? '').trim();
     }
 
     /**
@@ -231,12 +214,21 @@ export class FileUploadService {
      * Parse date value, handling various date formats
      */
     private parseDate(value: any): Date | undefined {
-        if (value === null || value === undefined || value === '') {
+        if (!value || value === null || value === undefined || value === '') {
             return undefined;
         }
-
-        const date = new Date(value);
-        return isNaN(date.getTime()) ? undefined : date;
+        const date = dayjs(
+            value,
+            [
+                'DD/MM/YY',
+                'DD/MM/YYYY',
+                'DD-MM-YY',
+                'DD-MM-YYYY',
+                'YYYY-MM-DD',
+            ],
+            true // strict mode
+        );
+        return date.isValid() ? date.toDate() : undefined;
     }
 
     /**
